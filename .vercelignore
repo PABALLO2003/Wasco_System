@@ -1,0 +1,10 @@
+@'
+node_modules
+.git
+README.md
+server/node_modules
+src
+public
+.gitignore
+.env
+'@ | Out-File -FilePath ".vercelignore" -Encoding utf8

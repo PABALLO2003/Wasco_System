@@ -1,8 +1,7 @@
 import axios from 'axios';
 
-// Use relative path - works on localhost AND Vercel
 const API = axios.create({
-    baseURL: '/api',
+    baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
 });
 
 API.interceptors.request.use((req) => {
