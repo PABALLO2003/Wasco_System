@@ -802,6 +802,11 @@ app.get('/api/reports/yearly', async (req, res) => {
 
 app.use(express.static(path.join(__dirname, '../build')));
 
+// CATCH-ALL ROUTE FOR REACT ROUTER - ADD THIS LINE
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../build', 'index.html'));
+});
+
 // ============================================
 // START SERVER
 // ============================================
