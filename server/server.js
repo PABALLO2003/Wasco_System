@@ -6,6 +6,7 @@ const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const path = require('path');
 
 dotenv.config();
 
@@ -17,7 +18,7 @@ app.use(express.json());
 // DATABASE CONNECTIONS
 // ============================================
 
-// MySQL Connection (FIXED with SSL for Aiven)
+// MySQL Connection (SSL for Aiven)
 const mysqlPool = mysql.createPool({
     host: process.env.MYSQL_HOST,
     port: process.env.MYSQL_PORT,
@@ -26,16 +27,17 @@ const mysqlPool = mysql.createPool({
     database: process.env.MYSQL_DATABASE,
     waitForConnections: true,
     connectionLimit: 10,
-    ssl: { rejectUnauthorized: false }  // REQUIRED for Aiven MySQL
+    ssl: { rejectUnauthorized: false }
 }).promise();
 
-// PostgreSQL Connection
+// PostgreSQL Connection (FIXED with SSL)
 const pgPool = new Pool({
     host: process.env.PG_HOST,
     port: process.env.PG_PORT,
     user: process.env.PG_USER,
     password: process.env.PG_PASSWORD,
     database: process.env.PG_DATABASE,
+    ssl: { rejectUnauthorized: false }  // ← ADDED THIS LINE
 });
 
 // Test connections
@@ -798,7 +800,6 @@ app.get('/api/reports/yearly', async (req, res) => {
 // SERVE REACT FRONTEND
 // ============================================
 
-const path = require('path');
 app.use(express.static(path.join(__dirname, '../build')));
 
 // ============================================
