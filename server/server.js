@@ -793,7 +793,16 @@ app.get('/api/reports/yearly', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+const path = require('path');
 
+// Serve static files from the React build folder
+app.use(express.static(path.join(__dirname, '../build')));
+
+// Handle any requests that don't match the above API routes
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../build', 'index.html'));
+});
+ 
 // ============================================
 // START SERVER
 // ============================================
@@ -804,3 +813,4 @@ app.listen(PORT, () => {
     console.log(`📊 MySQL Database: ${process.env.MYSQL_DATABASE}`);
     console.log(`📈 PostgreSQL Database: ${process.env.PG_DATABASE}`);
 });
+
