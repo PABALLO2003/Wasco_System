@@ -17,14 +17,16 @@ app.use(express.json());
 // DATABASE CONNECTIONS
 // ============================================
 
-// MySQL Connection
+// MySQL Connection (FIXED with SSL for Aiven)
 const mysqlPool = mysql.createPool({
     host: process.env.MYSQL_HOST,
+    port: process.env.MYSQL_PORT,
     user: process.env.MYSQL_USER,
     password: process.env.MYSQL_PASSWORD,
     database: process.env.MYSQL_DATABASE,
     waitForConnections: true,
-    connectionLimit: 10
+    connectionLimit: 10,
+    ssl: { rejectUnauthorized: false }  // REQUIRED for Aiven MySQL
 }).promise();
 
 // PostgreSQL Connection
@@ -178,7 +180,7 @@ app.post('/api/auth/admin-login', async (req, res) => {
 // CUSTOMER MANAGEMENT (ADMIN)
 // ============================================
 
-// Get all customers (with address field)
+// Get all customers
 app.get('/api/admin/customers', async (req, res) => {
     try {
         const [customers] = await mysqlPool.query(
@@ -191,12 +193,11 @@ app.get('/api/admin/customers', async (req, res) => {
     }
 });
 
-// Add Customer (Admin)
+// Add Customer
 app.post('/api/admin/add-customer', async (req, res) => {
     try {
         const { full_name, email, phone, address, district, password } = req.body;
         
-        // Check if email already exists
         const [existing] = await mysqlPool.query('SELECT email FROM customer WHERE email = ?', [email]);
         if (existing.length > 0) {
             return res.status(400).json({ error: 'Email already exists' });
@@ -219,7 +220,7 @@ app.post('/api/admin/add-customer', async (req, res) => {
     }
 });
 
-// Edit customer (Full details - UPDATED)
+// Edit customer
 app.put('/api/admin/customer/:customerId', async (req, res) => {
     try {
         const { customerId } = req.params;
@@ -298,7 +299,7 @@ app.get('/api/billing/customer/:customerId', async (req, res) => {
     }
 });
 
-// Get all bills for Admin Dashboard
+// Get all bills for Admin
 app.get('/api/billing/all', async (req, res) => {
     try {
         const pgResult = await pgPool.query(
@@ -335,7 +336,7 @@ app.get('/api/billing/all', async (req, res) => {
     }
 });
 
-// Generate bill for a customer
+// Generate bill
 app.post('/api/billing/generate/:customerId', async (req, res) => {
     const { customerId } = req.params;
     const { readingMonth } = req.body;
@@ -488,7 +489,7 @@ app.post('/api/payments', async (req, res) => {
     }
 });
 
-// Get payment history for a customer
+// Get payment history
 app.get('/api/payments/customer/:customerId', async (req, res) => {
     try {
         const { customerId } = req.params;
@@ -509,7 +510,7 @@ app.get('/api/payments/customer/:customerId', async (req, res) => {
     }
 });
 
-// Get all payments for Admin Dashboard
+// Get all payments
 app.get('/api/payments/all', async (req, res) => {
     try {
         const [payments] = await mysqlPool.query(
@@ -547,7 +548,7 @@ app.get('/api/leakage/customer/:customerId', async (req, res) => {
     }
 });
 
-// Get all leakages (Admin)
+// Get all leakages
 app.get('/api/leakage/all', async (req, res) => {
     try {
         const [rows] = await mysqlPool.query(
@@ -563,7 +564,7 @@ app.get('/api/leakage/all', async (req, res) => {
     }
 });
 
-// Report a leakage (Customer)
+// Report a leakage
 app.post('/api/leakage', async (req, res) => {
     try {
         const { customer_id, location, description } = req.body;
@@ -581,7 +582,7 @@ app.post('/api/leakage', async (req, res) => {
     }
 });
 
-// Update leakage status and assign technician (Admin)
+// Update leakage status
 app.put('/api/leakage/:reportId', async (req, res) => {
     try {
         const { reportId } = req.params;
@@ -607,7 +608,7 @@ app.put('/api/leakage/:reportId', async (req, res) => {
 });
 
 // ============================================
-// BILLING RATES MANAGEMENT (ADMIN)
+// BILLING RATES MANAGEMENT
 // ============================================
 
 // Get all billing rates
@@ -641,7 +642,7 @@ app.post('/api/admin/billing-rate', async (req, res) => {
     }
 });
 
-// Edit billing rate (Full details - UPDATED)
+// Edit billing rate
 app.put('/api/admin/billing-rate/:rateId', async (req, res) => {
     try {
         const { rateId } = req.params;
@@ -686,7 +687,7 @@ app.delete('/api/admin/billing-rate/:rateId', async (req, res) => {
 });
 
 // ============================================
-// REPORT ENDPOINTS (Branch Manager)
+// REPORT ENDPOINTS
 // ============================================
 
 // Daily report
