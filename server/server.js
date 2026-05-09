@@ -35,7 +35,7 @@ if (isProduction) {
         database: process.env.MYSQL_DATABASE,
         waitForConnections: true,
         connectionLimit: 10,
-        ssl: { rejectUnauthorized: false }
+        ssl: { rejectUnauthorized: false } // Required for Aiven MySQL
     };
     
     pgConfig = {
@@ -44,7 +44,7 @@ if (isProduction) {
         user: process.env.PG_USER,
         password: process.env.PG_PASSWORD,
         database: process.env.PG_DATABASE,
-        ssl: false
+        ssl: { rejectUnauthorized: false } // Fixed: Enable SSL for Render PostgreSQL
     };
 } else {
     // Use LOCAL databases (your PC)
