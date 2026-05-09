@@ -15,30 +15,64 @@ app.use(cors());
 app.use(express.json());
 
 // ============================================
-// DATABASE CONNECTIONS
+// DATABASE CONNECTIONS (WORKS FOR BOTH LOCAL & PRODUCTION)
 // ============================================
 
-// MySQL Connection (SSL for Aiven)
-const mysqlPool = mysql.createPool({
-    host: process.env.MYSQL_HOST,
-    port: process.env.MYSQL_PORT,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    database: process.env.MYSQL_DATABASE,
-    waitForConnections: true,
-    connectionLimit: 10,
-    ssl: { rejectUnauthorized: false }
-}).promise();
+// Check if running on Render (production) or locally
+const isProduction = process.env.NODE_ENV === 'production';
 
-// PostgreSQL Connection (FIXED with SSL)
-const pgPool = new Pool({
-    host: process.env.PG_HOST,
-    port: process.env.PG_PORT,
-    user: process.env.PG_USER,
-    password: process.env.PG_PASSWORD,
-    database: process.env.PG_DATABASE,
-    ssl: { rejectUnauthorized: false }  // ← ADDED THIS LINE
-});
+let mysqlConfig, pgConfig;
+
+if (isProduction) {
+    // Use CLOUD databases (Render/Aiven)
+    console.log('🔧 Running in PRODUCTION mode - using cloud databases');
+    
+    mysqlConfig = {
+        host: process.env.MYSQL_HOST,
+        port: process.env.MYSQL_PORT,
+        user: process.env.MYSQL_USER,
+        password: process.env.MYSQL_PASSWORD,
+        database: process.env.MYSQL_DATABASE,
+        waitForConnections: true,
+        connectionLimit: 10,
+        ssl: { rejectUnauthorized: false }
+    };
+    
+    pgConfig = {
+        host: process.env.PG_HOST,
+        port: process.env.PG_PORT,
+        user: process.env.PG_USER,
+        password: process.env.PG_PASSWORD,
+        database: process.env.PG_DATABASE,
+        ssl: false
+    };
+} else {
+    // Use LOCAL databases (your PC)
+    console.log('💻 Running in DEVELOPMENT mode - using local databases');
+    
+    mysqlConfig = {
+        host: process.env.MYSQL_HOST || 'localhost',
+        port: process.env.MYSQL_PORT || 3306,
+        user: process.env.MYSQL_USER || 'root',
+        password: process.env.MYSQL_PASSWORD,
+        database: process.env.MYSQL_DATABASE,
+        waitForConnections: true,
+        connectionLimit: 10,
+        ssl: false
+    };
+    
+    pgConfig = {
+        host: process.env.PG_HOST || 'localhost',
+        port: process.env.PG_PORT || 5432,
+        user: process.env.PG_USER || 'postgres',
+        password: process.env.PG_PASSWORD,
+        database: process.env.PG_DATABASE,
+        ssl: false
+    };
+}
+
+const mysqlPool = mysql.createPool(mysqlConfig).promise();
+const pgPool = new Pool(pgConfig);
 
 // Test connections
 async function testConnections() {
@@ -800,12 +834,14 @@ app.get('/api/reports/yearly', async (req, res) => {
 // SERVE REACT FRONTEND
 // ============================================
 
-app.use(express.static(path.join(__dirname, '../build')));
-
-// CATCH-ALL ROUTE FOR REACT ROUTER - ADD THIS LINE
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../build', 'index.html'));
-});
+// Only serve static files in production (on Render)
+if (isProduction) {
+    console.log('🔧 Serving React frontend from build folder');
+    app.use(express.static(path.join(__dirname, '../build')));
+    app.get('/*', (req, res) => {
+        res.sendFile(path.join(__dirname, '../build', 'index.html'));
+    });
+}
 
 // ============================================
 // START SERVER
@@ -816,4 +852,5 @@ app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📊 MySQL Database: ${process.env.MYSQL_DATABASE}`);
     console.log(`📈 PostgreSQL Database: ${process.env.PG_DATABASE}`);
+    console.log(`🌍 Environment: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
 });
